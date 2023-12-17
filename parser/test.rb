@@ -2,7 +2,7 @@ require 'nokogiri'
 require 'open-uri'
 require 'json'
 
-class Parser
+class DataParser
   attr_reader :items
 
   def initialize(url)
@@ -36,7 +36,7 @@ end
 
 
 url = 'https://jobs.dou.ua/first-job/'
-parser = Parser.new(url)
+parser = DataParser.new(url)
 parser.parse
 parser.save_to_json('parsed_data.json')
 
