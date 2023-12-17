@@ -1,7 +1,7 @@
 require 'telegram/bot'
 require_relative 'settings'
 
-token = api_token
+token = '6833964421:AAFeNeVesiWNDsxEptHf7CJa5WZwbykkhAk'
 
 Telegram::Bot::Client.run(token) do |bot|
 
@@ -18,11 +18,11 @@ Use this commands to navigate through:\n
 /events - to find actual events\n
 /jobs -  to find actual jobs")
       when '/jobs'
-      bot.api.send_message(chat_id: message.chat.id, text: "Sorry, but i cant find any event for you for you")
+      bot.api.send_message(chat_id: message.chat.id, text: "Sorry, but i cant find any job for you for you")
       when '/events'
-      bot.api.send_message(chat_id: message.chat.id, text: "Sorry, but i cant find any job for you")
+      bot.api.send_message(chat_id: message.chat.id, text: "Sorry, but i cant find any event for you")
       when '/stop'
-      bot.api.send_message(chat_id: message.chat.id, text: "Bye, #{message.from.first_name}")
+      bot.api.send_message(chat_id: message.chat.id, text: "Bye, #{message.from.first_name} 👋")
       end
     end
 end
