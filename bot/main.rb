@@ -1,7 +1,7 @@
 require 'telegram/bot'
 require_relative 'settings'
 
-token = '6833964421:AAFeNeVesiWNDsxEptHf7CJa5WZwbykkhAk'
+token = token
 
 Telegram::Bot::Client.run(token) do |bot|
 
