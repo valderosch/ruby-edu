@@ -1,6 +1,6 @@
 require 'telegram/bot'
 
-token = '6833964421:AAFeNeVesiWNDsxEptHf7CJa5WZwbykkhAk'
+token = token
 
 Telegram::Bot::Client.run(token) do |bot|
   Signal.trap('INT') do
@@ -96,7 +96,7 @@ Telegram::Bot::Client.run(token) do |bot|
 
   def job_to_message(job)
     <<~MESSAGE
-      #{job['title']}
+      <b>#{job['title']}</b>
       #jobs
       #{job['location']} | #{job['date']}
       <a href="#{job['link']}">Детальніше</a>
