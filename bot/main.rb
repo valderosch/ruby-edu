@@ -1,7 +1,8 @@
 require 'telegram/bot'
 
-token = token
+token = '6833964421:AAFeNeVesiWNDsxEptHf7CJa5WZwbykkhAk'
 
+# Bot initiation
 Telegram::Bot::Client.run(token) do |bot|
   Signal.trap('INT') do
     bot.stop
@@ -11,8 +12,7 @@ Telegram::Bot::Client.run(token) do |bot|
   def main_menu_keyboard
     Telegram::Bot::Types::ReplyKeyboardMarkup.new(
       keyboard: [
-        [{ text: 'Events' }],
-        [{ text: 'Jobs' }],
+        [{ text: 'Events' }, { text: 'Jobs' }],
         [{ text: 'Menu' }]
       ],
       one_time_keyboard: true
@@ -22,7 +22,7 @@ Telegram::Bot::Client.run(token) do |bot|
   def jobs_menu_keyboard
     Telegram::Bot::Types::ReplyKeyboardMarkup.new(
       keyboard: [
-        [{ text: 'GetAll' }],
+        [{ text: 'All' }, { text: 'Latest' }],
         [{ text: 'Back' }]
       ],
       one_time_keyboard: true
@@ -32,8 +32,7 @@ Telegram::Bot::Client.run(token) do |bot|
   def back_to_menu_keyboard
     Telegram::Bot::Types::ReplyKeyboardMarkup.new(
       keyboard: [
-        [{ text: 'Back to Menu' }],
-        [{ text: 'Send File' }]
+        [{ text: 'Back to Menu' }, { text: 'Send File' }]
       ],
       one_time_keyboard: true
     )
@@ -42,15 +41,27 @@ Telegram::Bot::Client.run(token) do |bot|
   def menu_menu_keyboard
     Telegram::Bot::Types::ReplyKeyboardMarkup.new(
       keyboard: [
-        [{ text: 'Back' }],
-        [{ text: 'Account' }, { text: 'Settings' }]
+        [{ text: 'Account' }, { text: 'Settings' }, {text: 'Help'}],
+        [{ text: 'Back' }]
       ],
       one_time_keyboard: true
     )
   end
 
-  def display_jobs(bot, chat_id, page, message_id = nil)
-    data_path = File.join(File.dirname(__FILE__), '..', 'out', 'data')
+  def pagination_inline_keyboard(current_page, total_pages)
+    buttons = [
+      Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Back'),
+      Telegram::Bot::Types::InlineKeyboardButton.new(text: 'File', callback_data: 'send_file')
+    ]
+
+    inline_keyboard = [buttons]
+    Telegram::Bot::Types::ReplyKeyboardMarkup.new(
+      keyboard: inline_keyboard,
+      one_time_keyboard: true
+    )
+  end
+
+  def display_jobs(bot, chat_id, page, message_id = nil, data_path)
     jobs_data = load_data(data_path)
 
     group = jobs_data.each_slice(10).to_a[page - 1] || []
@@ -79,30 +90,17 @@ Telegram::Bot::Client.run(token) do |bot|
     end
   end
 
-  current_page = 1
-
-  def pagination_inline_keyboard(current_page, total_pages)
-    buttons = [
-      Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Main Menu', callback_data: 'back_to_menu'),
-      Telegram::Bot::Types::InlineKeyboardButton.new(text: 'File', callback_data: 'send_file')
-    ]
-
-    inline_keyboard = [buttons]
-    Telegram::Bot::Types::ReplyKeyboardMarkup.new(
-      keyboard: inline_keyboard,
-      one_time_keyboard: true
-    )
-  end
-
+  # Message structure
   def job_to_message(job)
     <<~MESSAGE
       <b>#{job['title']}</b>
       #jobs
-      #{job['location']} | #{job['date']}
+      <b>#{job['location']}</b> | #{job['date']}
       <a href="#{job['link']}">Детальніше</a>
     MESSAGE
   end
 
+  # Load data from file
   def load_data(data_path)
     files = Dir.glob(File.join(data_path, 'dou_*.json'))
     latest_file = files.max_by { |f| File.mtime(f) }
@@ -110,36 +108,43 @@ Telegram::Bot::Client.run(token) do |bot|
     JSON.parse(File.read(latest_file))
   end
 
-  def send_doc_file(bot, chat_id)
-    doc_path = File.join(File.dirname(__FILE__), 'dou_data.txt')
+  # Send message to user
+  def send_file(bot, chat_id, data_path)
+    files = Dir.glob(File.join(data_path, '*.txt'))
+    latest_file = files.max_by { |f| File.mtime(f) }
 
-    bot.api.send_document(
-      chat_id: chat_id,
-      document: Faraday::UploadIO.new(doc_path, 'application/msword'),
-      caption: 'Here is your DOC file.'
-    )
+    if latest_file
+      bot.api.send_document(
+        chat_id: chat_id,
+        document: Faraday::UploadIO.new(latest_file, 'text/plain'),
+        caption: 'Here is all info in file.'
+      )
+    else
+      bot.api.send_message(chat_id: chat_id, text: 'No TXT files found.')
+    end
   end
 
   current_page = 1
-
+  data_path = File.join(File.dirname(__FILE__), '..', 'out', 'data')
+  # Event Listener
   bot.listen do |message|
     case message.text
     when '/start'
       bot.api.send_message(
         chat_id: message.chat.id,
-        text: "Hello, #{message.from.first_name}. I can find some events. Do you want to?",
+        text: "Hello, #{message.from.first_name}. I can find some events. Do you want to? Push the buttons",
         reply_markup: main_menu_keyboard
       )
     when 'Jobs'
       bot.api.send_message(
         chat_id: message.chat.id,
-        text: "Choose an option:",
+        text: "Choose what do you want to find \n💬 All vacancies \n🔥 Latest and hot",
         reply_markup: jobs_menu_keyboard
       )
     when 'Events'
       bot.api.send_message(
         chat_id: message.chat.id,
-        text: "Sorry, but I can't find any event for you",
+        text: "Sorry, but і can't find any event for you",
         reply_markup: main_menu_keyboard
       )
     when 'Menu'
@@ -148,8 +153,10 @@ Telegram::Bot::Client.run(token) do |bot|
         text: "Choose an option:",
         reply_markup: menu_menu_keyboard
       )
-    when 'GetAll'
-      display_jobs(bot, message.chat.id, current_page)
+    when 'All'
+      display_jobs(bot, message.chat.id, current_page, data_path)
+    when 'File'
+      send_file(bot, message.chat.id, data_path)
     when 'Back'
       bot.api.send_message(
         chat_id: message.chat.id,
@@ -158,6 +165,8 @@ Telegram::Bot::Client.run(token) do |bot|
       )
     when '/stop'
       bot.api.send_message(chat_id: message.chat.id, text: "Bye, #{message.from.first_name} 👋")
+
+      # Callback buttons handler
     when Telegram::Bot::Types::CallbackQuery
       case message.data
       when 'next'
@@ -170,10 +179,8 @@ Telegram::Bot::Client.run(token) do |bot|
           text: 'Going back to the main menu',
           reply_markup: main_menu_keyboard
         )
-      when 'send_file'
-        send_doc_file(bot, message.chat.id)
       end
-      display_jobs(bot, message.chat.id, current_page)
+      display_jobs(bot, message.chat.id, current_page, data_path)
 
       bot.api.send_message(
         chat_id: message.from.id,
