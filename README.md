@@ -35,4 +35,18 @@ _________
 7) Run bot using command `ruby main.rb` or using IDE tools.
 8) Navigate to your bot to start using.
 
-# Have Fun 😉❤
+## How to use bot?
+1) Find bot ny link or tag and start him.
+2) Choose Button "Jobs" to find actual vacancies.
+3) Choose Button "Events" to find actual events.
+4) Choose button "File" to get text file with all info.
+5) Use button "Back" to navigate to main menu.
+
+## Unreleased functional
+1) User settings.
+2) Frequency of requesting information from source
+3) Choosing File type.
+4) Pagination for lists.
+*But it will be updated soon*
+
+# Have Fun using this application 😉❤
